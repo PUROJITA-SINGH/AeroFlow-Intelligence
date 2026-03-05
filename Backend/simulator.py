@@ -1,3 +1,5 @@
+import asyncio
+from ws_manager import manager
 from dotenv import dotenv_values
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
@@ -63,6 +65,18 @@ def run_simulator():
                     queue_length    = max(0, count // 5),
                 )
                 db.add(reading)
+                # Broadcast to WebSocket clients
+                data = {
+                     "sensor_id"      : sensor.sensor_id,
+                     "location"       : sensor.location,
+                     "passenger_count": count,
+                     "queue_length"   : max(0, count // 5),
+                     "timestamp"      : str(datetime.now())
+                     }
+                try:
+                     asyncio.run(manager.broadcast(data))
+                except Exception:
+                    pass
                 print(f"  ✅ {sensor.location} | {sensor.sensor_id} | passengers: {count}")
 
             db.commit()
