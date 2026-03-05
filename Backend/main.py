@@ -5,18 +5,17 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from auth import get_db, hash_password, verify_password, create_access_token
 from database import User
+from routes import zones, live, history, predictions, alerts
 import threading
 from simulator import run_simulator
 
 # ── Lifespan (modern startup) ─────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     t = threading.Thread(target=run_simulator, daemon=True)
     t.start()
     print("🚀 Simulator started in background")
     yield
-    # Shutdown (nothing to clean up)
     print("🛑 AeroFlow API shutting down")
 
 # ── FastAPI App ───────────────────────────────────────────
@@ -26,6 +25,13 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# ── Register Routes ───────────────────────────────────────
+app.include_router(zones.router)
+app.include_router(live.router)
+app.include_router(history.router)
+app.include_router(predictions.router)
+app.include_router(alerts.router)
 
 # ── CORS Middleware ───────────────────────────────────────
 app.add_middleware(
@@ -74,8 +80,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token(data={"sub": user.username})
     return {
         "access_token": token,
-        "token_type": "bearer",
-        "role": user.role
+        "token_type"  : "bearer",
+        "role"        : user.role
     }
 
 # ── Root ──────────────────────────────────────────────────
