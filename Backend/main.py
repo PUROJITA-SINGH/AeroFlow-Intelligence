@@ -11,20 +11,25 @@ from simulator import run_simulator
 from alert_engine import run_alert_engine
 import threading
 import time
+from generate_predictions import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-     # Start alert engine
+    # Generate predictions on startup
+    import subprocess
+    import sys
+    subprocess.Popen([sys.executable, r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\Backend\generate_predictions.py"])
+    print("🔮 Generating predictions...")
+
+    # Alert engine first
     t2 = threading.Thread(target=run_alert_engine, daemon=True)
     t2.start()
     print("🚨 Alert engine started in background")
 
-    
-    # Start simulator
+    # Then simulator
     t1 = threading.Thread(target=run_simulator, daemon=True)
     t1.start()
     print("🚀 Simulator started in background")
-
 
     yield
     print("🛑 AeroFlow API shutting down")
