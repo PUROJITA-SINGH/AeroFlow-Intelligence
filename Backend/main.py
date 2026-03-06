@@ -7,14 +7,25 @@ from auth import get_db, hash_password, verify_password, create_access_token
 from database import User
 from routes import zones, live, history, predictions, alerts
 from ws_manager import manager
-import threading
 from simulator import run_simulator
+from alert_engine import run_alert_engine
+import threading
+import time
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    t = threading.Thread(target=run_simulator, daemon=True)
-    t.start()
+     # Start alert engine
+    t2 = threading.Thread(target=run_alert_engine, daemon=True)
+    t2.start()
+    print("🚨 Alert engine started in background")
+
+    
+    # Start simulator
+    t1 = threading.Thread(target=run_simulator, daemon=True)
+    t1.start()
     print("🚀 Simulator started in background")
+
+
     yield
     print("🛑 AeroFlow API shutting down")
 
