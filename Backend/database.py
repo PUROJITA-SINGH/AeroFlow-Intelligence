@@ -1,3 +1,4 @@
+import os
 from dotenv import dotenv_values
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Index
 from sqlalchemy.orm import declarative_base
@@ -5,8 +6,11 @@ from sqlalchemy.orm import sessionmaker
 
 # ── Load .env ─────────────────────────────────────────────
 ENV_PATH = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env"
-config = dotenv_values(ENV_PATH)
-DATABASE_URL = config.get("DATABASE_URL")
+config = dotenv_values(".env")
+DATABASE_URL = config.get("DATABASE_URL") or os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL not found. Check your .env file.")
 
 print("DATABASE_URL =", DATABASE_URL)
 

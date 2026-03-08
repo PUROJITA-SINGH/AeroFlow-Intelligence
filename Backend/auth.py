@@ -9,9 +9,8 @@ from database import SessionLocal, User
 
 # ── Load .env ─────────────────────────────────────────────
 ENV_PATH = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env"
-config = dotenv_values(ENV_PATH)
-
-SECRET_KEY = config.get("SECRET_KEY")
+config = dotenv_values(".env")
+SECRET_KEY = config.get("SECRET_KEY") or os.environ.get("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
