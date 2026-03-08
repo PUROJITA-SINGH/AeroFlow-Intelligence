@@ -1,19 +1,5 @@
 services:
 
-  # ── PostgreSQL Database ──────────────────────────
-  - type: pserv
-    name: aeroflow-postgres
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile.postgres
-    envVars:
-      - key: POSTGRES_USER
-        value: postgres
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: airport_analytics
-
   # ── FastAPI Backend ──────────────────────────────
   - type: web
     name: aeroflow-api
@@ -39,4 +25,6 @@ services:
 
 databases:
   - name: aeroflow-postgres
+    databaseName: airport_analytics
+    user: postgres
     plan: free
