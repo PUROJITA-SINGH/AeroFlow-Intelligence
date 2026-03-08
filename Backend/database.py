@@ -6,7 +6,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # ── Load environment variables ────────────────────────────
 # Render uses os.environ, local uses .env file
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
+# Fix for Render - SQLAlchemy requires postgresql:// not postgres://
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 if not DATABASE_URL:
     config = dotenv_values(r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env")
     DATABASE_URL = config.get("DATABASE_URL")
