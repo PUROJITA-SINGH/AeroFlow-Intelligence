@@ -49,8 +49,8 @@ app.include_router(alerts.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=["https://aeroflow-frontend.onrender.com", "http://localhost:3000", "*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
