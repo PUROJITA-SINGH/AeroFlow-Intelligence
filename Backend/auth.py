@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from database import SessionLocal, User
-
+import os
 # ── Load .env ─────────────────────────────────────────────
 ENV_PATH = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env"
 config = dotenv_values(".env")
