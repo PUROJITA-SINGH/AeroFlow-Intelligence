@@ -26,5 +26,4 @@ services:
 databases:
   - name: aeroflow-postgres
     databaseName: airport_analytics
-    user: postgres
     plan: free
