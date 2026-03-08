@@ -1,0 +1,42 @@
+services:
+
+  # ── PostgreSQL Database ──────────────────────────
+  - type: pserv
+    name: aeroflow-postgres
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: airport_analytics
+
+  # ── FastAPI Backend ──────────────────────────────
+  - type: web
+    name: aeroflow-api
+    env: docker
+    plan: free
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aeroflow-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  # ── React Frontend ───────────────────────────────
+  - type: web
+    name: aeroflow-frontend
+    env: docker
+    plan: free
+    dockerfilePath: ./Frontend/aeroflow-ui/Dockerfile
+    dockerContext: ./Frontend/aeroflow-ui
+
+databases:
+  - name: aeroflow-postgres
+    plan: free
