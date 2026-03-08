@@ -5,18 +5,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const API = 'http://localhost:8000';
 
 export default function LiveOverview() {
-  const [liveData, setLiveData]   = useState([]);
-  const [zones, setZones]         = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [liveData, setLiveData] = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   const fetchData = async () => {
     try {
-      const [liveRes, zonesRes] = await Promise.all([
-        axios.get(`${API}/api/live`),
-        axios.get(`${API}/api/zones`)
-      ]);
-      setLiveData(liveRes.data);
-      setZones(zonesRes.data);
+      const liveRes = await axios.get(`${API}/api/live`);
+    setLiveData(liveRes.data);
     } catch (err) {
       console.error('Error fetching live data:', err);
     }
