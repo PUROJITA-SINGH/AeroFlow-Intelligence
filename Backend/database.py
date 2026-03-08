@@ -1,21 +1,20 @@
 import os
 from dotenv import dotenv_values
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Index
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# ── Load .env ─────────────────────────────────────────────
-ENV_PATH = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env"
-config = dotenv_values(".env")
-DATABASE_URL = config.get("DATABASE_URL") or os.environ.get("DATABASE_URL")
+# ── Load environment variables ────────────────────────────
+# Render uses os.environ, local uses .env file
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL not found. Check your .env file.")
+    config = dotenv_values(r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env")
+    DATABASE_URL = config.get("DATABASE_URL")
 
-print("DATABASE_URL =", DATABASE_URL)
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL not found.")
 
-if DATABASE_URL is None:
-    raise ValueError("❌ DATABASE_URL not found. Check your .env file.")
+print("✅ DATABASE_URL loaded successfully")
 
 # ── Connect to PostgreSQL ─────────────────────────────────
 engine = create_engine(DATABASE_URL)
@@ -54,10 +53,10 @@ class Alert(Base):
 
     id        = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime)
-    severity  = Column(String)    # "Critical" / "Warning" / "Info"
+    severity  = Column(String)
     location  = Column(String)
     message   = Column(Text)
-    status    = Column(String)    # "Active" / "Resolved"
+    status    = Column(String)
 
 # ── Table 4: airport_zones ────────────────────────────────
 class AirportZone(Base):
@@ -75,8 +74,8 @@ class User(Base):
     id              = Column(Integer, primary_key=True, index=True)
     username        = Column(String, unique=True)
     hashed_password = Column(String)
-    role            = Column(String)    # "admin" / "operations" / "viewer"
+    role            = Column(String)
 
-# ── Create ALL tables in one shot ─────────────────────────
+# ── Create ALL tables ─────────────────────────────────────
 Base.metadata.create_all(engine)
 print("✅ All tables created successfully!")
