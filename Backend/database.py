@@ -3,20 +3,34 @@ from dotenv import dotenv_values
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Index
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# ── Load environment variables ────────────────────────────
-# Render uses os.environ, local uses .env file
+# ── DEBUG ─────────────────────────────────────────────────
+print("=== ENVIRONMENT DEBUG ===")
+print("DATABASE_URL from environ:", os.environ.get("DATABASE_URL"))
+print("All env keys:", list(os.environ.keys()))
+print("=========================")
+
+# ── Load DATABASE_URL ─────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL")
-# Fix for Render - SQLAlchemy requires postgresql:// not postgres://
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if not DATABASE_URL:
+    print("⚠️ Not found in os.environ, trying .env file...")
     config = dotenv_values(r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env")
     DATABASE_URL = config.get("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL not found.")
+    print("⚠️ Not found in .env file either, trying current directory...")
+    config2 = dotenv_values(".env")
+    DATABASE_URL = config2.get("DATABASE_URL")
 
-print("✅ DATABASE_URL loaded successfully")
+# ── Fix Render postgres:// → postgresql:// ────────────────
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    print("✅ Fixed postgres:// to postgresql://")
+
+print("FINAL DATABASE_URL:", DATABASE_URL)
+
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL not found in any source.")
 
 # ── Connect to PostgreSQL ─────────────────────────────────
 engine = create_engine(DATABASE_URL)
