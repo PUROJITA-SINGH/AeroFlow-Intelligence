@@ -1,0 +1,11 @@
+timestamp,sensor_id,location,passenger_count,queue_length
+2026-03-01 07:00:00,S001,Security Checkpoint,95,19
+2026-03-01 07:00:00,S002,Security Checkpoint,88,17
+2026-03-01 07:00:00,S003,Gate B,72,14
+2026-03-01 07:00:00,S004,Baggage Claim,110,22
+2026-03-01 07:00:00,S005,Check-in,65,13
+2026-03-01 08:00:00,S001,Security Checkpoint,115,23
+2026-03-01 08:00:00,S002,Security Checkpoint,108,21
+2026-03-01 08:00:00,S003,Gate B,89,17
+2026-03-01 08:00:00,S004,Baggage Claim,125,25
+2026-03-01 08:00:00,S005,Check-in,78,15
