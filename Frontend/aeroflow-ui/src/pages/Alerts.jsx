@@ -1,152 +1,163 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CockpitCSS } from '../cockpit';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-export default function Alerts() {
-  const [alerts, setAlerts]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const role                  = localStorage.getItem('role');
-  const token                 = localStorage.getItem('token');
+const SEV_MAP = {
+  Critical:{ color:C.red,    code:'MASTER CAUTION', pulse:true  },
+  Warning: { color:C.orange, code:'CAUTION',         pulse:false },
+  Info:    { color:C.blue,   code:'ADVISORY',        pulse:false },
+};
 
-  const fetchAlerts = async () => {
-    try {
-      const res = await axios.get(`${API}/api/alerts`);
-      setAlerts(res.data);
-    } catch (err) {
-      console.error('Error fetching alerts:', err);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const resolveAlert = async (id) => {
-    try {
-      await axios.post(
-        `${API}/api/alerts/resolve/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessage('✅ Alert resolved successfully!');
-      fetchAlerts();
-      setTimeout(() => setMessage(''), 3000);
-    } catch (err) {
-      setMessage('❌ Failed to resolve alert');
-      setTimeout(() => setMessage(''), 3000);
-    }
-  };
-
-  const getSeverityStyle = (severity) => {
-    if (severity === 'Critical') return { border: '#ef4444', bg: '#450a0a', badge: '#ef4444' };
-    if (severity === 'Warning')  return { border: '#f59e0b', bg: '#451a03', badge: '#f59e0b' };
-    return                              { border: '#0ea5e9', bg: '#0c1a2e', badge: '#0ea5e9' };
-  };
-
-  const getSeverityIcon = (severity) => {
-    if (severity === 'Critical') return '🔴';
-    if (severity === 'Warning')  return '🟡';
-    return '🔵';
-  };
-
-  if (loading) return <p style={{ color: 'white' }}>Loading...</p>;
-
+function MasterCautionPanel({ counts }) {
+  const [blink, setBlink] = useState(true);
+  useEffect(() => { const id=setInterval(()=>setBlink(b=>!b),600); return ()=>clearInterval(id); }, []);
   return (
-    <div>
-      <h1 style={{ color: '#38bdf8', marginBottom: '8px' }}>🚨 Alerts</h1>
-      <p style={{ color: '#64748b', marginBottom: '24px' }}>
-        Active alerts — refreshes every 10 seconds
-      </p>
-
-      {/* ── Message ── */}
-      {message && (
-        <div style={{
-          padding: '12px 16px', borderRadius: '8px', marginBottom: '20px',
-          backgroundColor: message.includes('✅') ? '#052e16' : '#450a0a',
-          border: `1px solid ${message.includes('✅') ? '#22c55e' : '#ef4444'}`,
-          color: message.includes('✅') ? '#22c55e' : '#ef4444'
-        }}>
-          {message}
-        </div>
-      )}
-
-      {/* ── Alert Count ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '30px' }}>
+    <CockpitPanel accent={C.red} label="MASTER WARNING PANEL" style={{ padding:'16px', marginBottom:'14px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px' }}>
         {[
-          { label: '🔴 Critical', count: alerts.filter(a => a.severity === 'Critical').length, color: '#ef4444' },
-          { label: '🟡 Warning',  count: alerts.filter(a => a.severity === 'Warning').length,  color: '#f59e0b' },
-          { label: '🔵 Info',     count: alerts.filter(a => a.severity === 'Info').length,     color: '#0ea5e9' },
-        ].map((m, i) => (
+          { label:'MASTER CAUTION', sublabel:'CRITICAL', count:counts.Critical, color:C.red,    active:counts.Critical>0 },
+          { label:'CAUTION',        sublabel:'WARNING',  count:counts.Warning,  color:C.orange, active:counts.Warning>0  },
+          { label:'ADVISORY',       sublabel:'INFO',     count:counts.Info,     color:C.blue,   active:counts.Info>0     },
+        ].map((w,i) => (
           <div key={i} style={{
-            backgroundColor: '#1e293b', padding: '20px',
-            borderRadius: '12px', border: `1px solid ${m.color}`
+            backgroundColor: w.active ? `${w.color}12` : '#000',
+            border:`1px solid ${w.active ? w.color : w.color+'20'}`,
+            padding:'14px 16px', textAlign:'center',
+            boxShadow: w.active ? `0 0 20px ${w.color}20, inset 0 0 20px ${w.color}08` : 'none',
+            transition:'all 0.3s',
           }}>
-            <p style={{ color: m.color, fontSize: '13px' }}>{m.label}</p>
-            <p style={{ color: 'white', fontSize: '32px', fontWeight: 'bold', marginTop: '8px' }}>{m.count}</p>
+            <p style={{
+              color: w.active ? (i===0 && blink ? w.color : w.color) : `${w.color}20`,
+              fontSize:'9px', letterSpacing:'3px', marginBottom:'6px',
+              textShadow: w.active ? `0 0 10px ${w.color}` : 'none',
+              animation: w.active && i===0 ? 'cockpitBlink 0.6s infinite' : 'none',
+            }}>{w.label}</p>
+            <p style={{ color:w.active?w.color:`${w.color}15`, fontSize:'36px', fontWeight:'bold',
+              textShadow: w.active ? `0 0 20px ${w.color}` : 'none' }}>
+              {w.count}
+            </p>
+            <p style={{ color:`${w.color}40`, fontSize:'7px', letterSpacing:'2px', marginTop:'4px' }}>{w.sublabel} ALERTS</p>
           </div>
         ))}
       </div>
+    </CockpitPanel>
+  );
+}
 
-      {/* ── Alerts List ── */}
-      {alerts.length === 0 ? (
-        <div style={{
-          backgroundColor: '#1e293b', padding: '40px',
-          borderRadius: '12px', border: '1px solid #334155',
-          textAlign: 'center'
-        }}>
-          <p style={{ color: '#22c55e', fontSize: '18px' }}>✅ No active alerts — all zones are normal!</p>
+export default function Alerts() {
+  const [alerts,  setAlerts]  = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [msg,     setMsg]     = useState('');
+  const role  = localStorage.getItem('role');
+  const token = localStorage.getItem('token');
+
+  const fetchAlerts = async () => {
+    try { const res=await axios.get(`${API}/api/alerts`); setAlerts(res.data); }
+    catch(e){ console.error(e); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAlerts(); const id=setInterval(fetchAlerts,10000); return ()=>clearInterval(id); }, []);
+
+  const resolveAlert = async (id) => {
+    try {
+      await axios.post(`${API}/api/alerts/resolve/${id}`,{},{ headers:{ Authorization:`Bearer ${token}` } });
+      setMsg('RESOLVED'); fetchAlerts();
+    } catch { setMsg('FAILED'); }
+    setTimeout(()=>setMsg(''),3000);
+  };
+
+  const counts = {
+    Critical: alerts.filter(a=>a.severity==='Critical').length,
+    Warning:  alerts.filter(a=>a.severity==='Warning').length,
+    Info:     alerts.filter(a=>a.severity==='Info').length,
+  };
+
+  if (loading) return (
+    <div style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',backgroundColor:C.bg }}>
+      <p style={{ color:`${C.red}60`,fontFamily:"'Courier New',monospace",letterSpacing:'4px',fontSize:'10px' }}>SCANNING THREATS...</p>
+    </div>
+  );
+
+  return (
+    <div style={{ backgroundColor:C.bg, minHeight:'100vh', position:'relative', fontFamily:"'Courier New',monospace" }}>
+      <CockpitCSS /><Scanlines /><GridBg color={C.red} />
+      <div style={{ position:'relative', zIndex:1 }}>
+
+        {/* Header */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px', borderBottom:`1px solid ${C.red}15`, paddingBottom:'10px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+            <p style={{ color:`${C.red}40`, fontSize:'8px', letterSpacing:'4px' }}>INCIDENT MANAGEMENT SYSTEM</p>
+            {counts.Critical>0 && <StatusBadge label="MASTER CAUTION ACTIVE" color={C.red} pulse />}
+          </div>
+          <DataTag label="TOTAL INCIDENTS" value={alerts.length} color={alerts.length>0?C.red:C.green} size="sm" />
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {alerts.map((alert) => {
-            const style = getSeverityStyle(alert.severity);
-            return (
-              <div key={alert.id} style={{
-                backgroundColor: style.bg, padding: '20px',
-                borderRadius: '12px', border: `1px solid ${style.border}`,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <span style={{
-                      backgroundColor: style.badge, color: 'white',
-                      padding: '2px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold'
-                    }}>
-                      {getSeverityIcon(alert.severity)} {alert.severity}
-                    </span>
-                    <span style={{ color: '#94a3b8', fontSize: '13px' }}>{alert.location}</span>
-                    <span style={{ color: '#64748b', fontSize: '12px' }}>
-                      {new Date(alert.timestamp).toLocaleString()}
-                    </span>
+
+        {/* Master caution panel */}
+        <MasterCautionPanel counts={counts} />
+
+        {/* Toast */}
+        {msg && (
+          <div style={{ padding:'10px 14px', marginBottom:'14px', border:`1px solid ${msg==='RESOLVED'?C.green:C.red}50`, backgroundColor:`${msg==='RESOLVED'?C.green:C.red}08`, display:'flex', alignItems:'center', gap:'10px' }}>
+            <div style={{ width:'6px',height:'6px',borderRadius:'50%',backgroundColor:msg==='RESOLVED'?C.green:C.red,boxShadow:`0 0 8px ${msg==='RESOLVED'?C.green:C.red}` }} />
+            <span style={{ color:msg==='RESOLVED'?C.green:C.red, fontSize:'9px', letterSpacing:'3px' }}>
+              {msg==='RESOLVED' ? 'ALERT RESOLVED — SYSTEM UPDATED' : 'RESOLUTION FAILED — RETRY'}
+            </span>
+          </div>
+        )}
+
+        {/* Alert list */}
+        {alerts.length === 0 ? (
+          <CockpitPanel accent={C.green} style={{ padding:'40px', textAlign:'center' }}>
+            <StatusBadge label="ALL SYSTEMS NOMINAL" color={C.green} />
+            <p style={{ color:`${C.green}30`, fontSize:'9px', letterSpacing:'2px', marginTop:'12px' }}>NO ACTIVE INCIDENTS DETECTED</p>
+          </CockpitPanel>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+            {alerts.map((alert,idx) => {
+              const s = SEV_MAP[alert.severity] || SEV_MAP.Info;
+              return (
+                <CockpitPanel key={alert.id} accent={s.color} style={{ padding:'14px 16px' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px' }}>
+                        <StatusBadge label={s.code} color={s.color} pulse={s.pulse} />
+                        <span style={{ color:`${s.color}50`, fontSize:'8px', letterSpacing:'2px' }}>
+                          {alert.location.toUpperCase()}
+                        </span>
+                        <span style={{ color:`${C.green}25`, fontSize:'8px', letterSpacing:'1px' }}>
+                          {new Date(alert.timestamp).toLocaleTimeString()}
+                        </span>
+                        <span style={{ color:`${C.blue}40`, fontSize:'7px', letterSpacing:'1px', marginLeft:'auto' }}>
+                          INC-{String(idx+1).padStart(3,'0')}
+                        </span>
+                      </div>
+                      <p style={{ color:'rgba(255,255,255,0.7)', fontSize:'12px', letterSpacing:'1px' }}>
+                        {alert.message}
+                      </p>
+                    </div>
+                    {(role==='admin'||role==='operations') && (
+                      <button onClick={()=>resolveAlert(alert.id)} style={{
+                        marginLeft:'20px', padding:'8px 14px',
+                        backgroundColor:`${C.green}08`, border:`1px solid ${C.green}30`,
+                        color:C.green, fontSize:'8px', letterSpacing:'3px',
+                        cursor:'pointer', fontFamily:"'Courier New',monospace", transition:'all 0.2s',
+                      }}
+                      onMouseEnter={e=>{e.target.style.backgroundColor=`${C.green}18`;e.target.style.boxShadow=`0 0 10px ${C.green}30`;}}
+                      onMouseLeave={e=>{e.target.style.backgroundColor=`${C.green}08`;e.target.style.boxShadow='none';}}
+                      >
+                        RESOLVE
+                      </button>
+                    )}
                   </div>
-                  <p style={{ color: 'white', fontSize: '15px' }}>{alert.message}</p>
-                </div>
-
-                {/* ── Resolve Button ── */}
-                {(role === 'admin' || role === 'operations') && (
-                  <button
-                    onClick={() => resolveAlert(alert.id)}
-                    style={{
-                      padding: '8px 16px', marginLeft: '20px',
-                      backgroundColor: '#22c55e', color: 'white',
-                      border: 'none', borderRadius: '8px',
-                      cursor: 'pointer', fontSize: '13px',
-                      fontWeight: 'bold', whiteSpace: 'nowrap'
-                    }}
-                  >
-                    ✓ Resolve
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                </CockpitPanel>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
