@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CapacityBar, CockpitCSS } from '../cockpit';
@@ -86,7 +86,6 @@ const PAGE_LABELS = {
 export default function Analytics() {
   const [data,       setData]       = useState({});
   const [sessionTime,setSessionTime]= useState(0);
-  const [mounted,    setMounted]    = useState(false);
 
   const refresh = useCallback(() => {
     setData(getAnalytics());
@@ -95,7 +94,6 @@ export default function Analytics() {
   useEffect(() => {
     trackEvent('/analytics', 'view');
     refresh();
-    setMounted(true);
     const id = setInterval(() => {
       setSessionTime(t => t + 1);
     }, 1000);
