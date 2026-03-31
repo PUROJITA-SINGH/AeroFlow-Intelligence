@@ -28,7 +28,7 @@ export default function LiveOverview() {
   const [history,     setHistory]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [tick,        setTick]        = useState(0);
+
 
   const fetchData = async () => {
     try {
@@ -44,7 +44,7 @@ export default function LiveOverview() {
   };
 
   useEffect(() => { fetchData(); const id=setInterval(fetchData,10000); return ()=>clearInterval(id); }, []);
-  useEffect(() => { const id=setInterval(()=>setTick(t=>t+1),1000); return ()=>clearInterval(id); }, []);
+
 
   const unique = Object.values(liveData.reduce((acc,r) => {
     if(!acc[r.location]||r.passenger_count>acc[r.location].passenger_count) acc[r.location]=r;

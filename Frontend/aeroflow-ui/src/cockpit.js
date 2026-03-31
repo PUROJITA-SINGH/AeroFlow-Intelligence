@@ -162,7 +162,7 @@ export function MiniRadar({ size = 80, color = C.green }) {
     let angle    = 0;
     const blips  = Array.from({length:4}, () => ({ r:10+Math.random()*28, a:Math.random()*Math.PI*2, life:0 }));
     function draw() {
-      const S  = canvas.width = canvas.height = size * window.devicePixelRatio;
+      canvas.width = canvas.height = size * window.devicePixelRatio;
       canvas.style.width  = size + 'px';
       canvas.style.height = size + 'px';
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);

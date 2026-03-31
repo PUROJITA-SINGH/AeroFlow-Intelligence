@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CockpitCSS, MiniRadar } from '../cockpit';
 
 const API   = process.env.REACT_APP_API_URL || 'http://localhost:8000';
