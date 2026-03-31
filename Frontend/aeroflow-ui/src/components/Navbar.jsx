@@ -8,6 +8,7 @@ const LINKS = [
   { path:'/alerts',       code:'SYS-03', label:'ALERTS',       color:C.red    },
   { path:'/historical',   code:'SYS-04', label:'HISTORY',      color:C.orange },
   { path:'/model-health', code:'SYS-05', label:'MODEL HEALTH', color:C.green  },
+  { path:'/analytics',    code:'SYS-06', label:'ANALYTICS',    color:C.blue   },
 ];
 
 const ROLE_COLOR = { admin:C.red, operations:C.orange, viewer:C.green };

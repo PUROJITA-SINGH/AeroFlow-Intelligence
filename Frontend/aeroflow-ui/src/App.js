@@ -1,86 +1,65 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
+import Login        from './pages/Login';
 import LiveOverview from './pages/LiveOverview';
-import Predictions from './pages/Predictions';
-import Alerts from './pages/Alerts';
-import Historical from './pages/Historical';
-import ModelHealth from './pages/ModelHealth';
-import Navbar from './components/Navbar';
+import Predictions  from './pages/Predictions';
+import Alerts       from './pages/Alerts';
+import Historical   from './pages/Historical';
+import ModelHealth  from './pages/ModelHealth';
+import Analytics, { trackEvent, trackSession } from './pages/Analytics';
+import Navbar       from './components/Navbar';
 
+// ── Auth Guard ────────────────────────────────────────────
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" />;
+  return token ? children : <Navigate to="/login" replace />;
 }
 
-function App() {
+// ── Dashboard Layout ──────────────────────────────────────
+function DashboardLayout({ page, children }) {
+  useEffect(() => {
+    trackEvent(page, 'view');
+  }, [page]);
+
+  return (
+    <div style={{ display:'flex', minHeight:'100vh', backgroundColor:'#030500' }}>
+      <Navbar />
+      <main className="dashboard-main">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+// ── Protected Dashboard Route ─────────────────────────────
+function DashboardRoute({ page, element }) {
+  return (
+    <ProtectedRoute>
+      <DashboardLayout page={page}>
+        {element}
+      </DashboardLayout>
+    </ProtectedRoute>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────
+export default function App() {
+  // track session on first load
+  useEffect(() => { trackSession(); }, []);
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <LiveOverview />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
-        <Route path="/live" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <LiveOverview />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
-        <Route path="/predictions" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <Predictions />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
-        <Route path="/alerts" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <Alerts />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
-        <Route path="/historical" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <Historical />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
-        <Route path="/model-health" element={
-          <ProtectedRoute>
-            <div style={{ display: 'flex' }}>
-              <Navbar />
-              <div style={{ marginLeft: '220px', padding: '30px', width: '100%' }}>
-                <ModelHealth />
-              </div>
-            </div>
-          </ProtectedRoute>
-        } />
+        <Route path="/login"        element={<Login />} />
+        <Route path="/"             element={<DashboardRoute page="/live"         element={<LiveOverview />} />} />
+        <Route path="/live"         element={<DashboardRoute page="/live"         element={<LiveOverview />} />} />
+        <Route path="/predictions"  element={<DashboardRoute page="/predictions"  element={<Predictions />} />} />
+        <Route path="/alerts"       element={<DashboardRoute page="/alerts"       element={<Alerts />} />} />
+        <Route path="/historical"   element={<DashboardRoute page="/historical"   element={<Historical />} />} />
+        <Route path="/model-health" element={<DashboardRoute page="/model-health" element={<ModelHealth />} />} />
+        <Route path="/analytics"    element={<DashboardRoute page="/analytics"    element={<Analytics />} />} />
+        <Route path="*"             element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
-
-export default App;
