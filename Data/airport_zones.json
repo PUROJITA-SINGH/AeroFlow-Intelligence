@@ -1,0 +1,97 @@
+{
+  "airport": "AeroFlow International Airport",
+  "version": "1.0.0",
+  "last_updated": "2026-03-26",
+  "zones": [
+    {
+      "zone_id": 1,
+      "code": "SEC-01",
+      "name": "Security Checkpoint",
+      "capacity": 100,
+      "zone_type": "security",
+      "sensor_id": "S001",
+      "alert_thresholds": {
+        "critical_pct": 120,
+        "warning_pct": 80,
+        "max_queue_minutes": 20
+      },
+      "operating_hours": "04:00 - 23:00",
+      "description": "Main passenger security screening area"
+    },
+    {
+      "zone_id": 2,
+      "code": "GTE-02",
+      "name": "Gate B",
+      "capacity": 80,
+      "zone_type": "gate",
+      "sensor_id": "S002",
+      "alert_thresholds": {
+        "critical_pct": 120,
+        "warning_pct": 80,
+        "max_queue_minutes": 20
+      },
+      "operating_hours": "05:00 - 23:00",
+      "description": "Domestic departure gate cluster B"
+    },
+    {
+      "zone_id": 3,
+      "code": "BAG-03",
+      "name": "Baggage Claim",
+      "capacity": 120,
+      "zone_type": "baggage",
+      "sensor_id": "S003",
+      "alert_thresholds": {
+        "critical_pct": 120,
+        "warning_pct": 80,
+        "max_queue_minutes": 20
+      },
+      "operating_hours": "05:00 - 00:00",
+      "description": "Arrivals baggage reclaim hall"
+    },
+    {
+      "zone_id": 4,
+      "code": "CHK-04",
+      "name": "Check-in",
+      "capacity": 90,
+      "zone_type": "checkin",
+      "sensor_id": "S004",
+      "alert_thresholds": {
+        "critical_pct": 120,
+        "warning_pct": 80,
+        "max_queue_minutes": 20
+      },
+      "operating_hours": "04:00 - 22:00",
+      "description": "Passenger check-in counters and kiosks"
+    }
+  ],
+  "alert_rules": [
+    {
+      "rule_id": 1,
+      "name": "Capacity Exceeded",
+      "condition": "passenger_count > capacity * 1.2",
+      "severity": "Critical",
+      "action": "Trigger alert + notify operations"
+    },
+    {
+      "rule_id": 2,
+      "name": "Queue Too Long",
+      "condition": "queue_length > 20",
+      "severity": "Warning",
+      "action": "Trigger alert"
+    },
+    {
+      "rule_id": 3,
+      "name": "Anomaly Detected",
+      "condition": "isolation_forest_score == -1",
+      "severity": "Critical",
+      "action": "Trigger alert + log anomaly"
+    },
+    {
+      "rule_id": 4,
+      "name": "Auto Resolve",
+      "condition": "passenger_count < capacity * 0.7 AND queue_length < 10",
+      "severity": "Info",
+      "action": "Auto-resolve existing alert"
+    }
+  ]
+}

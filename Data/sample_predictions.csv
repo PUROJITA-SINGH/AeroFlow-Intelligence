@@ -1,0 +1,46 @@
+timestamp,location,predicted_count,confidence_level
+2026-03-26 00:00:00,Security Checkpoint,8,0.91
+2026-03-26 01:00:00,Security Checkpoint,6,0.92
+2026-03-26 02:00:00,Security Checkpoint,5,0.93
+2026-03-26 03:00:00,Security Checkpoint,5,0.93
+2026-03-26 04:00:00,Security Checkpoint,7,0.91
+2026-03-26 05:00:00,Security Checkpoint,14,0.88
+2026-03-26 06:00:00,Security Checkpoint,28,0.85
+2026-03-26 07:00:00,Security Checkpoint,67,0.82
+2026-03-26 08:00:00,Security Checkpoint,104,0.79
+2026-03-26 09:00:00,Security Checkpoint,118,0.77
+2026-03-26 10:00:00,Security Checkpoint,72,0.83
+2026-03-26 11:00:00,Security Checkpoint,65,0.84
+2026-03-26 12:00:00,Security Checkpoint,74,0.83
+2026-03-26 13:00:00,Security Checkpoint,69,0.84
+2026-03-26 14:00:00,Security Checkpoint,61,0.85
+2026-03-26 15:00:00,Security Checkpoint,66,0.84
+2026-03-26 16:00:00,Security Checkpoint,75,0.83
+2026-03-26 17:00:00,Security Checkpoint,111,0.78
+2026-03-26 18:00:00,Security Checkpoint,124,0.76
+2026-03-26 19:00:00,Security Checkpoint,95,0.80
+2026-03-26 20:00:00,Security Checkpoint,47,0.86
+2026-03-26 21:00:00,Security Checkpoint,29,0.88
+2026-03-26 22:00:00,Security Checkpoint,16,0.90
+2026-03-26 23:00:00,Security Checkpoint,9,0.91
+2026-03-26 00:00:00,Gate B,6,0.92
+2026-03-26 06:00:00,Gate B,22,0.86
+2026-03-26 07:00:00,Gate B,58,0.83
+2026-03-26 08:00:00,Gate B,119,0.78
+2026-03-26 09:00:00,Gate B,137,0.75
+2026-03-26 10:00:00,Gate B,68,0.83
+2026-03-26 17:00:00,Gate B,124,0.77
+2026-03-26 18:00:00,Gate B,141,0.74
+2026-03-26 19:00:00,Gate B,102,0.80
+2026-03-26 00:00:00,Baggage Claim,5,0.93
+2026-03-26 07:00:00,Baggage Claim,41,0.85
+2026-03-26 08:00:00,Baggage Claim,88,0.80
+2026-03-26 09:00:00,Baggage Claim,103,0.79
+2026-03-26 17:00:00,Baggage Claim,97,0.80
+2026-03-26 18:00:00,Baggage Claim,108,0.78
+2026-03-26 00:00:00,Check-in,7,0.92
+2026-03-26 07:00:00,Check-in,55,0.83
+2026-03-26 08:00:00,Check-in,107,0.78
+2026-03-26 09:00:00,Check-in,122,0.76
+2026-03-26 17:00:00,Check-in,116,0.77
+2026-03-26 18:00:00,Check-in,129,0.75
