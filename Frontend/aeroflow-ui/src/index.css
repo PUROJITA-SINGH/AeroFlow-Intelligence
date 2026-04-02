@@ -43,6 +43,12 @@ body {
   font-size: 14px;
 }
 
+/* ── Recharts fix — must have explicit height ── */
+.recharts-responsive-container {
+  min-height: 200px;
+  width: 100% !important;
+}
+
 /* ── Tablet (≤ 1024px) ── */
 @media (max-width: 1024px) {
   .dashboard-main {
@@ -52,7 +58,6 @@ body {
 
 /* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  /* Sidebar becomes slide-in overlay */
   nav {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
@@ -63,16 +68,20 @@ body {
     transform: translateX(0);
   }
 
-  /* Main content takes full width */
   .dashboard-main {
     margin-left: 0 !important;
-    padding: 60px 14px 20px;
+    padding: 60px 12px 20px;
     width: 100%;
   }
 
-  /* Show hamburger */
   .mobile-menu-btn {
     display: block;
+  }
+
+  /* Recharts needs explicit height on mobile */
+  .recharts-responsive-container {
+    min-height: 200px !important;
+    height: 200px !important;
   }
 
   /* Stat grids collapse to 2 columns */
@@ -84,11 +93,6 @@ body {
   /* Zone cards go to 1 column */
   .dashboard-main div[style*="repeat(2,1fr)"] {
     grid-template-columns: 1fr !important;
-  }
-
-  /* Charts reduce height */
-  .recharts-responsive-container {
-    min-height: 180px !important;
   }
 
   /* Login page stacks vertically */
@@ -108,13 +112,18 @@ body {
 /* ── Small mobile (≤ 480px) ── */
 @media (max-width: 480px) {
   .dashboard-main {
-    padding: 56px 10px 16px;
+    padding: 56px 8px 16px;
   }
 
   .dashboard-main div[style*="repeat(4,1fr)"],
   .dashboard-main div[style*="repeat(3,1fr)"],
   .dashboard-main div[style*="repeat(2,1fr)"] {
     grid-template-columns: 1fr !important;
+  }
+
+  .recharts-responsive-container {
+    min-height: 160px !important;
+    height: 160px !important;
   }
 }
 
