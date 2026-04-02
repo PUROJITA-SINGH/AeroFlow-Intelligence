@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from auth import get_db
-from database import SensorReading
+from auth import get_db, get_current_user
+from database import SensorReading, User
 from datetime import datetime, timedelta
 
 router = APIRouter()
 
 @router.get("/api/history", tags=["History"])
 def get_history(
-    zone : str = Query(..., description="Zone name e.g. 'Security Checkpoint'"),
-    hours: int = Query(24,  description="Number of hours to look back"),
-    db   : Session = Depends(get_db)
+    zone        : str     = Query(..., description="Zone name e.g. 'Security Checkpoint'"),
+    hours       : int     = Query(24,  description="Number of hours to look back", ge=1),
+    db          : Session = Depends(get_db),
+    current_user: User    = Depends(get_current_user)
 ):
     """Returns historical sensor readings for a specific zone"""
     since = datetime.now() - timedelta(hours=hours)

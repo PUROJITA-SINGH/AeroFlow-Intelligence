@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from auth import get_db
-from database import AirportZone
+from auth import get_db, get_current_user
+from database import AirportZone, User
 
 router = APIRouter()
 
 @router.get("/api/zones", tags=["Zones"])
-def get_zones(db: Session = Depends(get_db)):
+def get_zones(
+    db          : Session = Depends(get_db),
+    current_user: User    = Depends(get_current_user)
+):
     """Returns list of all airport zones"""
     zones = db.query(AirportZone).all()
     return [

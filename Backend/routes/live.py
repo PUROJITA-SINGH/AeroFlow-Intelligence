@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from auth import get_db
-from database import SensorReading
+from auth import get_db, get_current_user
+from database import SensorReading, User
 from datetime import datetime, timedelta
 
 router = APIRouter()
 
 @router.get("/api/live", tags=["Live Data"])
-def get_live(db: Session = Depends(get_db)):
+def get_live(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Returns latest sensor reading per zone (last 1 minute)"""
     one_min_ago = datetime.now() - timedelta(minutes=1)
 
