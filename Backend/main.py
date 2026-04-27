@@ -69,10 +69,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://aeroflow-frontend.onrender.com",
-        "http://localhost:3000",
-    ],
+    allow_origins=["https://your-aeroflow-frontend-url.up.railway.app",
+    "https://aeroflow-frontend.onrender.com",
+    "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],

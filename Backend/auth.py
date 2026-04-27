@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -15,10 +15,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError(
         "❌ SECRET_KEY not set. "
-        "Add it to your .env file locally or to Render's environment variables."
+        "Add it to your .env file locally, or to Render's environment variables."
     )
 
-ALGORITHM                   = "HS256"
+ALGORITHM                  = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # ── Password Hashing ──────────────────────────────────────
@@ -43,14 +43,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ── Create JWT Token ──────────────────────────────────────
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire    = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire    = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# ── Decode JWT & Get Current User ─────────────────────────
+# ── Decode JWT & Get Current User ────────────────────────
 def get_current_user(
-    token: str     = Depends(oauth2_scheme),
-    db:    Session = Depends(get_db)
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -73,9 +73,10 @@ def get_current_user(
 # ── Role-Based Authorization ──────────────────────────────
 def require_role(*allowed_roles: str):
     """
-    Dependency factory for role-based access control.
-    Usage: @router.post("/endpoint")
-           def endpoint(user=Depends(require_role("admin", "operations"))):
+    Dependency factory. Usage:
+        @router.post("/resolve/{id}")
+        def resolve(user=Depends(require_role("admin", "operations"))):
+            ...
     """
     def _checker(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in allowed_roles:
