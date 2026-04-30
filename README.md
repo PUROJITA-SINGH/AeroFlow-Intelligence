@@ -288,6 +288,88 @@ AeroFlow-Intelligence/
 
 ---
 
+## 📸 Screenshots
+
+### Login Page — Cockpit Access Control
+![Login](docs/screenshots/login.png)
+
+### Live Monitoring Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### AI Predictions
+![Predictions](docs/screenshots/predictions.png)
+
+## 🔌 Hardware Integration
+
+### IoT Sensor Setup (Raspberry Pi + Camera)
+
+
+#### Components Required
+| Component | Purpose |
+|---|---|
+| Raspberry Pi 4 (2GB+) | Run YOLOv8 camera detection |
+| Pi Camera Module v2 | Capture passenger video feed |
+| ESP32 | WiFi data transmission to backend |
+
+#### Sensor Scripts
+- `camera_sensor.py` — Live camera detection + backend integration
+- `test_yolo.py` — Standalone camera test
+
+## 📡 API Examples
+
+### Login
+**Request:**
+```json
+POST /api/login
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+**Response:**
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer"
+}
+```
+
+### Live Sensor Data
+**Request:**
+```json
+GET /api/live
+Headers: Authorization: Bearer <token>
+```
+**Response:**
+```json
+{
+  "zone": "Security",
+  "passenger_count": 47,
+  "queue_length": 12,
+  "congestion_level": "Medium",
+  "anomaly_score": 1,
+  "timestamp": "2026-04-30T14:00:00"
+}
+```
+
+### AI Predictions
+**Request:**
+```json
+GET /api/predictions?zone=Security
+Headers: Authorization: Bearer <token>
+```
+**Response:**
+```json
+{
+  "zone": "Security",
+  "forecast": [
+    {"timestamp": "2026-04-30T15:00:00", "predicted_count": 65},
+    {"timestamp": "2026-04-30T16:00:00", "predicted_count": 89}
+  ]
+}
+```
+
+
 ## 👥 Team
 
 | Name | GitHub | Contribution |
