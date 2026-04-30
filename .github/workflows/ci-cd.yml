@@ -79,7 +79,7 @@ jobs:
 
       - name: Build Backend Docker image
         run: |
-          docker build ./Backend -t aeroflow-api:latest
+          docker build -f Backend/Dockerfile -t aeroflow-api .
           echo "✅ Backend Docker image built"
 
       - name: Build Frontend Docker image
