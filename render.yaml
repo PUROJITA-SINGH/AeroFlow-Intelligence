@@ -2,7 +2,7 @@ services:
 
   - type: web
     name: aeroflow-api
-    env: docker
+    runtime: docker
     plan: free
     dockerfilePath: ./Backend/Dockerfile
     dockerContext: .
@@ -40,7 +40,7 @@ services:
 
   - type: web
     name: aeroflow-frontend
-    env: docker
+    runtime: docker
     plan: free
     dockerfilePath: ./Frontend/aeroflow-ui/Dockerfile
     dockerContext: ./Frontend/aeroflow-ui
