@@ -21,17 +21,19 @@
 
 | Service | URL | Status |
 |---|---|---|
-| 🖥️ Dashboard | https://aeroflow-frontend.onrender.com | Live |
-| ⚙️ API | https://aeroflow-api.onrender.com | Live |
-| 📖 Swagger UI | https://aeroflow-api.onrender.com/docs | Live |
+| 🖥️ Dashboard | https://aeroflow-frontend-production.up.railway.app | Live |
+| ⚙️ API | https://aeroflow-api-production.up.railway.app | Live |
+| 📖 Swagger UI | Disabled in production | Use non-production `ENV` to enable |
 
 ### 🔑 Production Accounts
 
 | Username | Password | Role | Access |
 |---|---|---|---|
-| Configure securely in the database | Use a generated secret | Admin | Full system access |
-| Create through `/api/register` | Use a generated secret | Operations | Manage alerts and sensor ingestion |
-| Create through `/api/register` | Use a generated secret | Viewer | Read-only dashboard |
+| `admin` | Set with `ADMIN_PASSWORD` | Admin | Full system access |
+| `sensor_operator` | Set with `OPERATIONS_PASSWORD` | Operations | Manage alerts and sensor ingestion |
+| `viewer` | Set with `VIEWER_PASSWORD` | Viewer | Read-only dashboard |
+
+These users are created by `Backend/seed_admin.py` in the database pointed to by `DATABASE_URL`. If `DATABASE_URL` points to Railway PostgreSQL, the credentials work from any browser against the deployed Railway frontend.
 
 ---
 
@@ -136,7 +138,7 @@ Sensor Reading → Alert Engine (every 5 min)
 |---|---|
 | Docker + Compose | Containerisation |
 | GitHub Actions | CI/CD pipeline |
-| Render | Cloud deployment |
+| Railway | Cloud deployment |
 
 ---
 
@@ -200,13 +202,17 @@ Open your deployed frontend URL.
 ### Environment Variables
 
 ```env
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<database>
+DATABASE_URL=postgresql://postgres:<password>@<host>:<port>/railway?sslmode=require
 SECRET_KEY=your_64_char_hex_secret
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourpassword
 POSTGRES_DB=airport_analytics
 ENV=development
 VITE_API_URL=https://your-api-host.example.com
+ADMIN_PASSWORD=your_strong_admin_password
+OPERATIONS_PASSWORD=your_strong_operations_password
+VIEWER_PASSWORD=your_strong_viewer_password
+SEED_ADMIN=false
 ```
 
 Generate a secure SECRET_KEY:
@@ -214,15 +220,46 @@ Generate a secure SECRET_KEY:
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
+### Bootstrap Railway Users
+
+For a fresh Railway PostgreSQL database, run migrations first, then seed the initial users. Use Railway's public PostgreSQL URL from the PostgreSQL service variables or TCP proxy; do not use placeholder text, and do not use a `.railway.internal` URL from your laptop.
+
+```powershell
+cd "c:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\Backend"
+
+$env:DATABASE_URL = "postgresql://postgres:<password>@<public-host>:<public-port>/railway?sslmode=require"
+$env:ADMIN_PASSWORD = "AdminStrongPassword123!"
+$env:OPERATIONS_PASSWORD = "OpsStrongPassword123!"
+$env:VIEWER_PASSWORD = "ViewerStrongPassword123!"
+
+..\..\venv\Scripts\python.exe -m alembic upgrade head
+..\..\venv\Scripts\python.exe seed_admin.py
+```
+
+Verify the users:
+
+```powershell
+..\..\venv\Scripts\python.exe -c "from database import SessionLocal, User; db=SessionLocal(); print([(u.username,u.role) for u in db.query(User).all()]); db.close()"
+```
+
+Test login against the deployed API:
+
+```powershell
+$ApiUrl = "https://aeroflow-api-production.up.railway.app"
+$login = Invoke-RestMethod -Method Post -Uri "$ApiUrl/api/login" -ContentType "application/json" -Body (@{ username = "admin"; password = $env:ADMIN_PASSWORD } | ConvertTo-Json)
+$token = $login.access_token
+```
+
+`seed_admin.py` is idempotent: running it again skips existing users. During Railway deploys, `prestart.sh` only runs the seed script when `SEED_ADMIN=true`; keep `SEED_ADMIN=false` unless you intentionally want deployment-time seeding.
+
 ### Sensor Ingestion User
 
-`camera_sensor.py` logs in with `AEROFLOW_SENSOR_USERNAME` and `AEROFLOW_SENSOR_PASSWORD`, then posts readings to `/api/sensor-readings`. Create that account as an `operations` user with an admin token:
+`camera_sensor.py` logs in with `AEROFLOW_SENSOR_USERNAME` and `AEROFLOW_SENSOR_PASSWORD`, then posts readings to `/api/sensor-readings`. Use the seeded operations account:
 
-```bash
-curl -X POST "$AEROFLOW_API_URL/api/register" \
-  -H "Authorization: Bearer <admin-token>" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"sensor_operator\",\"password\":\"<generated-password>\",\"role\":\"operations\"}"
+```env
+AEROFLOW_API_URL=https://aeroflow-api-production.up.railway.app
+AEROFLOW_SENSOR_USERNAME=sensor_operator
+AEROFLOW_SENSOR_PASSWORD=<same value as OPERATIONS_PASSWORD>
 ```
 
 ---
@@ -239,6 +276,8 @@ AeroFlow-Intelligence/
 │   ├── alert_engine.py          # 4-rule automated alert system
 │   ├── generate_predictions.py  # Prophet model inference
 │   ├── seed_data.py             # Database seeding
+│   ├── seed_admin.py            # Idempotent initial user bootstrap
+│   ├── prestart.sh              # Alembic migration + optional user seed
 │   ├── ws_manager.py            # WebSocket connection manager
 │   ├── requirements.txt
 │   ├── Dockerfile
@@ -271,9 +310,11 @@ AeroFlow-Intelligence/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml
+├── railway.toml                 # Backend Railway service config
+├── Frontend/aeroflow-ui/railway.toml
 ├── docker-compose.yml
 ├── .env.example
-└── render.yaml
+└── .dockerignore
 ```
 
 ---
