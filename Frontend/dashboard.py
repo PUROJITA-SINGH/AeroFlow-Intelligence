@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 
 # ── Page Config ───────────────────────────────────────────
 st.set_page_config(
@@ -8,7 +9,7 @@ st.set_page_config(
     layout     = "wide"
 )
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("AEROFLOW_API_URL", "").rstrip("/")
 
 # ── Login Function ────────────────────────────────────────
 def login(username, password):

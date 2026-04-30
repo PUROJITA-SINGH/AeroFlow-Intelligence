@@ -1,25 +1,22 @@
 import os
 import pickle
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database import Prediction
 from datetime import datetime
 
-# ── Load DATABASE_URL ─────────────────────────────────────
-DATABASE_URL = os.environ.get("DATABASE_URL")
+load_dotenv()
 
-if not DATABASE_URL:
-    config = dotenv_values(r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env")
-    DATABASE_URL = config.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL not found in generate_predictions.py")
+    raise ValueError("DATABASE_URL is required")
 
-engine       = create_engine(DATABASE_URL)
+engine       = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
 
 # ── Load Prophet Models ───────────────────────────────────

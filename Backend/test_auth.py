@@ -17,6 +17,8 @@ from jose import jwt
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 ALGORITHM  = "HS256"
+JWT_ISSUER = "aeroflow-api"
+JWT_AUDIENCE = "aeroflow-client"
 
 # ─────────────────────────────────────────────────────────
 # PASSWORD TESTS
@@ -64,14 +66,26 @@ def test_create_access_token_returns_string():
 def test_access_token_contains_username():
     """Token payload contains the username"""
     token   = create_access_token({"sub": "testuser", "role": "admin"})
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM],
+        issuer=JWT_ISSUER,
+        audience=JWT_AUDIENCE,
+    )
     assert payload["sub"]  == "testuser"
     assert payload["role"] == "admin"
 
 def test_access_token_has_expiry():
     """Token payload contains expiry field"""
     token   = create_access_token({"sub": "testuser"})
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM],
+        issuer=JWT_ISSUER,
+        audience=JWT_AUDIENCE,
+    )
     assert "exp" in payload
 
 def test_token_invalid_secret_rejected():

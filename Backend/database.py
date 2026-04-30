@@ -1,39 +1,28 @@
 import os
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Index
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# ── DEBUG ─────────────────────────────────────────────────
-print("=== ENVIRONMENT DEBUG ===")
-print("DATABASE_URL from environ:", os.environ.get("DATABASE_URL"))
-print("All env keys:", list(os.environ.keys()))
-print("=========================")
+load_dotenv()
 
-# ── Load DATABASE_URL ─────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if not DATABASE_URL:
-    print("⚠️ Not found in os.environ, trying .env file...")
-    config = dotenv_values(r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env")
-    DATABASE_URL = config.get("DATABASE_URL")
-
-if not DATABASE_URL:
-    print("⚠️ Not found in .env file either, trying current directory...")
-    config2 = dotenv_values(".env")
-    DATABASE_URL = config2.get("DATABASE_URL")
-
-# ── Fix Render postgres:// → postgresql:// ────────────────
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    print("✅ Fixed postgres:// to postgresql://")
-
-print("FINAL DATABASE_URL:", DATABASE_URL)
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL not found in any source.")
+    raise ValueError("DATABASE_URL is required")
 
 # ── Connect to PostgreSQL ─────────────────────────────────
-engine = create_engine(DATABASE_URL)
+engine_kwargs = {"pool_pre_ping": True}
+if DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://")):
+    engine_kwargs.update(
+        pool_size=int(os.environ.get("DB_POOL_SIZE", "5")),
+        max_overflow=int(os.environ.get("DB_MAX_OVERFLOW", "2")),
+        pool_recycle=int(os.environ.get("DB_POOL_RECYCLE", "300")),
+    )
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -51,6 +40,7 @@ class SensorReading(Base):
     __table_args__ = (
         Index('idx_timestamp', 'timestamp'),
         Index('idx_location',  'location'),
+        Index('idx_sensor_readings_location_timestamp', 'location', 'timestamp'),
     )
 
 # ── Table 2: predictions ──────────────────────────────────
@@ -63,6 +53,10 @@ class Prediction(Base):
     predicted_count  = Column(Float)
     confidence_level = Column(Float)
 
+    __table_args__ = (
+        Index('idx_predictions_location_timestamp', 'location', 'timestamp'),
+    )
+
 # ── Table 3: alerts ───────────────────────────────────────
 class Alert(Base):
     __tablename__ = "alerts"
@@ -73,6 +67,10 @@ class Alert(Base):
     location  = Column(String)
     message   = Column(Text)
     status    = Column(String)
+
+    __table_args__ = (
+        Index('idx_alerts_status_severity', 'status', 'severity'),
+    )
 
 # ── Table 4: airport_zones ────────────────────────────────
 class AirportZone(Base):
@@ -91,7 +89,3 @@ class User(Base):
     username        = Column(String, unique=True)
     hashed_password = Column(String)
     role            = Column(String)
-
-# ── Create ALL tables ─────────────────────────────────────
-Base.metadata.create_all(engine)
-print("✅ All tables created successfully!")

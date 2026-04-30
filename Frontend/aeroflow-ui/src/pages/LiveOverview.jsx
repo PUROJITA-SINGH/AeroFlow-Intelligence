@@ -3,7 +3,7 @@ import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CapacityBar, MiniRadar, CockpitCSS } from '../cockpit';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API = import.meta.env.VITE_API_URL || '';
 
 const ZONE_CODES = { 'Security Checkpoint':'SEC-01', 'Gate B':'GTE-02', 'Baggage Claim':'BAG-03', 'Check-in':'CHK-04' };
 

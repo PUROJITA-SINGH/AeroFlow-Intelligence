@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from auth import get_db, get_current_user
 from database import SensorReading, User
-from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -12,31 +11,25 @@ def get_live(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Returns latest sensor reading per zone (last 1 minute)"""
-    one_min_ago = datetime.now() - timedelta(minutes=1)
+    """Returns the latest sensor reading per zone"""
+    subquery = (
+        db.query(
+            SensorReading.location,
+            func.max(SensorReading.timestamp).label("max_ts")
+        )
+        .group_by(SensorReading.location)
+        .subquery()
+    )
 
     readings = (
         db.query(SensorReading)
-        .filter(SensorReading.timestamp >= one_min_ago)
+        .join(
+            subquery,
+            (SensorReading.location == subquery.c.location) &
+            (SensorReading.timestamp == subquery.c.max_ts)
+        )
         .all()
     )
-
-    # If no readings in last 1 min, get the very latest per zone
-    if not readings:
-        subquery = (
-            db.query(
-                SensorReading.location,
-                func.max(SensorReading.timestamp).label("max_ts")
-            )
-            .group_by(SensorReading.location)
-            .subquery()
-        )
-        readings = (
-            db.query(SensorReading)
-            .join(subquery, (SensorReading.location == subquery.c.location) &
-                  (SensorReading.timestamp == subquery.c.max_ts))
-            .all()
-        )
 
     return [
         {

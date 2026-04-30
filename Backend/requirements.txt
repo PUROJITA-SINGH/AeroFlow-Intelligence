@@ -12,3 +12,4 @@ pandas==2.2.2
 numpy==1.26.4
 slowapi==0.1.9
 python-multipart==0.0.9
+alembic==1.16.5

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CapacityBar, MiniRadar, CockpitCSS } from '../cockpit';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API = import.meta.env.VITE_API_URL || '';
 
 const RADAR_DATA = [
   { metric:'ACCURACY',    Prophet:88, RandomForest:85, IsolationForest:92 },
@@ -23,7 +23,9 @@ export default function ModelHealth() {
     Promise.all([
       axios.get(`${API}/api/alerts`),
       axios.get(`${API}/api/live`),
-      axios.get(`${API}/api/predictions`),
+      axios.get(`${API}/api/predictions`, {
+        params: { zone: 'Security Checkpoint' },
+      }),
     ]).then(([a,l,p])=>{ setAlerts(a.data);setLive(l.data);setPredictions(p.data); })
       .catch(console.error).finally(()=>setLoading(false));
   }, []);

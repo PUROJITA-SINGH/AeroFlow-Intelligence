@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import os
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("AEROFLOW_API_URL", "").rstrip("/")
 
 # ── Auth Check ────────────────────────────────────────────
 if "token" not in st.session_state or st.session_state.token is None:
@@ -16,7 +17,10 @@ st.divider()
 # ── Fetch Alerts ──────────────────────────────────────────
 def get_alerts():
     try:
-        response = requests.get(f"{API_URL}/api/alerts")
+        response = requests.get(
+            f"{API_URL}/api/alerts",
+            headers={"Authorization": f"Bearer {st.session_state.token}"}
+        )
         return response.json() if response.status_code == 200 else []
     except:
         return []

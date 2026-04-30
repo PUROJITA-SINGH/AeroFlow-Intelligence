@@ -3,8 +3,9 @@ import requests
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+import os
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("AEROFLOW_API_URL", "").rstrip("/")
 
 # ── Auth Check ────────────────────────────────────────────
 if "token" not in st.session_state or st.session_state.token is None:
@@ -25,7 +26,11 @@ with col2:
 # ── Fetch Data ────────────────────────────────────────────
 def get_history(zone, hours):
     try:
-        response = requests.get(f"{API_URL}/api/history", params={"zone": zone, "hours": hours})
+        response = requests.get(
+            f"{API_URL}/api/history",
+            params={"zone": zone, "hours": hours},
+            headers={"Authorization": f"Bearer {st.session_state.token}"}
+        )
         return response.json() if response.status_code == 200 else []
     except:
         return []

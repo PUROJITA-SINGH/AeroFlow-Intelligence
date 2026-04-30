@@ -1,4 +1,4 @@
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import pandas as pd
 import pickle
@@ -8,11 +8,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, classification_report
 import os
 
-# ── Load DB ───────────────────────────────────────────────
-ENV_PATH = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\.env"
-config = dotenv_values(ENV_PATH)
-DATABASE_URL = config.get("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
+load_dotenv()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is required")
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # ── Load Data ─────────────────────────────────────────────
 print("📦 Loading data from database...")

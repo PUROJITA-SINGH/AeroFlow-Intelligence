@@ -24,7 +24,7 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-Open http://localhost:3000
+Open your configured frontend host.
 
 ---
 
@@ -45,7 +45,7 @@ cp .env.example .env
 
 Edit `.env`:
 ```env
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/airport_analytics
+DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<database>
 SECRET_KEY=your_64_char_hex_key
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourpassword
@@ -97,8 +97,8 @@ Start the backend:
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API is now running at http://localhost:8000  
-Swagger UI at http://localhost:8000/docs
+API is now running at your configured API host.  
+Swagger UI is available at `<api-host>/docs` outside production.
 
 ### 5. Frontend Setup
 
@@ -108,17 +108,17 @@ npm install
 npm start
 ```
 
-Dashboard is now running at http://localhost:3000
+Dashboard is now running at your configured frontend host.
 
 ---
 
-## Default Login Credentials
+## Production Accounts
 
 | Username | Password | Role |
 |----------|----------|------|
-| admin | admin123 | Full access |
-| operations | ops123 | Manage alerts |
-| viewer | view123 | Read-only |
+| Configure securely in the database | Generated secret | Admin |
+| Create through `/api/register` | Generated secret | Operations |
+| Create through `/api/register` | Generated secret | Viewer |
 
 ---
 
@@ -200,5 +200,5 @@ npx kill-port 3000
 ### Frontend can't reach backend
 Check `Frontend/aeroflow-ui/.env.production`:
 ```env
-REACT_APP_API_URL=https://your-backend-url.onrender.com
+VITE_API_URL=https://your-backend-url.onrender.com
 ```

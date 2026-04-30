@@ -1,7 +1,7 @@
 # AeroFlow Intelligence — API Reference
 
 **Base URL (Production):** `https://aeroflow-api.onrender.com`  
-**Base URL (Local):** `http://localhost:8000`  
+**Base URL:** set with `AEROFLOW_API_URL` / your deployed API host.  
 **Version:** 1.0.0
 
 ---
@@ -18,7 +18,7 @@ Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "<password>"
 }
 ```
 

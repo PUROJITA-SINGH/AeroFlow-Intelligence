@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 import plotly.graph_objects as go
 import time
+import os
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("AEROFLOW_API_URL", "").rstrip("/")
 
 # ── Auth Check ────────────────────────────────────────────
 if "token" not in st.session_state or st.session_state.token is None:
@@ -19,14 +20,20 @@ st.divider()
 # ── Fetch Live Data ───────────────────────────────────────
 def get_live_data():
     try:
-        response = requests.get(f"{API_URL}/api/live")
+        response = requests.get(
+            f"{API_URL}/api/live",
+            headers={"Authorization": f"Bearer {st.session_state.token}"}
+        )
         return response.json() if response.status_code == 200 else []
     except:
         return []
 
 def get_zones():
     try:
-        response = requests.get(f"{API_URL}/api/zones")
+        response = requests.get(
+            f"{API_URL}/api/zones",
+            headers={"Authorization": f"Bearer {st.session_state.token}"}
+        )
         return response.json() if response.status_code == 200 else []
     except:
         return []

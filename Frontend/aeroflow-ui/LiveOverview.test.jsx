@@ -1,20 +1,34 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { beforeAll, beforeEach, test, vi } from 'vitest';
 import axios from 'axios';
-import LiveOverview from './pages/LiveOverview';
+import LiveOverview from './src/pages/LiveOverview';
 
-jest.mock('axios');
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+  },
+}));
 
 // mock canvas
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = () => ({
-    clearRect: jest.fn(), beginPath: jest.fn(), arc: jest.fn(),
-    stroke: jest.fn(), fill: jest.fn(), moveTo: jest.fn(), lineTo: jest.fn(),
-    save: jest.fn(), restore: jest.fn(), translate: jest.fn(), rotate: jest.fn(),
-    createLinearGradient: jest.fn(() => ({ addColorStop: jest.fn() })),
-    createRadialGradient: jest.fn(() => ({ addColorStop: jest.fn() })),
-    setLineDash: jest.fn(),
+    clearRect: vi.fn(), beginPath: vi.fn(), arc: vi.fn(),
+    stroke: vi.fn(), fill: vi.fn(), closePath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
+    save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(),
+    scale: vi.fn(),
+    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    setLineDash: vi.fn(),
   });
+});
+
+beforeEach(() => {
+  axios.get.mockReset();
 });
 
 const MOCK_LIVE_DATA = [
@@ -45,10 +59,10 @@ test('LiveOverview renders zone cards after fetch', async () => {
   render(<MemoryRouter><LiveOverview /></MemoryRouter>);
 
   await waitFor(() => {
-    expect(screen.getByText('Security Checkpoint')).toBeInTheDocument();
-    expect(screen.getByText('Gate B')).toBeInTheDocument();
-    expect(screen.getByText('Baggage Claim')).toBeInTheDocument();
-    expect(screen.getByText('Check-in')).toBeInTheDocument();
+    expect(screen.getByText('SECURITY CHECKPOINT')).toBeInTheDocument();
+    expect(screen.getByText('GATE B')).toBeInTheDocument();
+    expect(screen.getByText('BAGGAGE CLAIM')).toBeInTheDocument();
+    expect(screen.getByText('CHECK-IN')).toBeInTheDocument();
   });
 });
 

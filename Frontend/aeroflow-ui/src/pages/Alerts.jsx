@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CockpitCSS } from '../cockpit';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API = import.meta.env.VITE_API_URL || '';
 
 const SEV_MAP = {
   Critical:{ color:C.red,    code:'MASTER CAUTION', pulse:true  },

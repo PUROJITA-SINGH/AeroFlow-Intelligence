@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+Backend/test.db
+Backend/test_auth.db
+Frontend/aeroflow-ui/node_modules/
+Frontend/aeroflow-ui/build/
+Frontend/aeroflow-ui/dist/
+Frontend/aeroflow-ui/.env*

@@ -25,13 +25,13 @@
 | ⚙️ API | https://aeroflow-api.onrender.com | Live |
 | 📖 Swagger UI | https://aeroflow-api.onrender.com/docs | Live |
 
-### 🔑 Demo Credentials
+### 🔑 Production Accounts
 
 | Username | Password | Role | Access |
 |---|---|---|---|
-| `admin` | `admin123` | Admin | Full system access |
-| `operations` | `ops123` | Operations | Manage & resolve alerts |
-| `viewer` | `view123` | Viewer | Read-only dashboard |
+| Configure securely in the database | Use a generated secret | Admin | Full system access |
+| Create through `/api/register` | Use a generated secret | Operations | Manage alerts and sensor ingestion |
+| Create through `/api/register` | Use a generated secret | Viewer | Read-only dashboard |
 
 ---
 
@@ -171,7 +171,7 @@ cp .env.example .env        # fill in your values
 docker-compose up --build
 ```
 
-Open http://localhost:3000
+Open the URL configured in `VITE_API_URL` / your frontend host.
 
 ### Option 2 — Manual
 
@@ -195,22 +195,34 @@ npm install
 npm start
 ```
 
-Open http://localhost:3000
+Open your deployed frontend URL.
 
 ### Environment Variables
 
 ```env
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/airport_analytics
+DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<database>
 SECRET_KEY=your_64_char_hex_secret
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourpassword
 POSTGRES_DB=airport_analytics
 ENV=development
+VITE_API_URL=https://your-api-host.example.com
 ```
 
 Generate a secure SECRET_KEY:
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### Sensor Ingestion User
+
+`camera_sensor.py` logs in with `AEROFLOW_SENSOR_USERNAME` and `AEROFLOW_SENSOR_PASSWORD`, then posts readings to `/api/sensor-readings`. Create that account as an `operations` user with an admin token:
+
+```bash
+curl -X POST "$AEROFLOW_API_URL/api/register" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"sensor_operator\",\"password\":\"<generated-password>\",\"role\":\"operations\"}"
 ```
 
 ---

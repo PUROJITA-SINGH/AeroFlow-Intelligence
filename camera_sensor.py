@@ -1,19 +1,25 @@
 from ultralytics import YOLO
 import cv2
+import os
 import requests
 import time
 
 model = YOLO("yolov8n.pt")
 cap = cv2.VideoCapture(0)
 
-# Your live AeroFlow API
-API_URL = "https://aeroflow-api.onrender.com/api/live"
+API_BASE = os.environ["AEROFLOW_API_URL"].rstrip("/")
+USERNAME = os.environ["AEROFLOW_SENSOR_USERNAME"]
+PASSWORD = os.environ["AEROFLOW_SENSOR_PASSWORD"]
 
 # Login to get token
-login = requests.post("https://aeroflow-api.onrender.com/api/login", 
-    json={"username": "admin", "password": "admin123"})
-token = login.json().get("access_token")
-print("Logged in! Token received ✅")
+login = requests.post(
+    f"{API_BASE}/api/login",
+    json={"username": USERNAME, "password": PASSWORD},
+    timeout=10,
+)
+login.raise_for_status()
+token = login.json()["access_token"]
+print("Logged in. Token received.")
 
 headers = {"Authorization": f"Bearer {token}"}
 
@@ -31,13 +37,20 @@ while True:
     # Send to backend every 60 seconds
     if time.time() - last_sent >= 60:
         data = {
-            "zone": "Security",
+            "sensor_id": "CAM-001",
+            "location": "Security Checkpoint",
             "passenger_count": person_count,
             "queue_length": person_count // 3
         }
         try:
-            response = requests.post(API_URL, json=data, headers=headers)
-            print(f"Sent to dashboard! Status: {response.status_code}")
+            response = requests.post(
+                f"{API_BASE}/api/sensor-readings",
+                json=data,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            print(f"Sent to dashboard. Status: {response.status_code}")
         except Exception as e:
             print(f"Error sending: {e}")
         last_sent = time.time()

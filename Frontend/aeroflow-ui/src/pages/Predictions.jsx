@@ -3,7 +3,7 @@ import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { C, Scanlines, GridBg, CockpitPanel, DataTag, StatusBadge, CockpitCSS, MiniRadar } from '../cockpit';
 
-const API   = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API   = import.meta.env.VITE_API_URL || '';
 const ZONES = ['Security Checkpoint','Gate B','Baggage Claim','Check-in'];
 const CODES  = { 'Security Checkpoint':'SEC-01','Gate B':'GTE-02','Baggage Claim':'BAG-03','Check-in':'CHK-04' };
 

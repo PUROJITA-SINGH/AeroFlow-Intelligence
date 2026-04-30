@@ -7,7 +7,8 @@ router = APIRouter()
 
 @router.get("/api/predictions", tags=["Predictions"])
 def get_predictions(
-    zone        : str     = Query(..., description="Zone name e.g. 'Security Checkpoint'"),
+    zone        : str     = Query(..., min_length=1, max_length=100, description="Zone name e.g. 'Security Checkpoint'"),
+    limit       : int     = Query(24, description="Maximum number of forecast records to return", ge=1, le=168),
     db          : Session = Depends(get_db),
     current_user: User    = Depends(get_current_user)
 ):
@@ -16,6 +17,7 @@ def get_predictions(
         db.query(Prediction)
         .filter(Prediction.location == zone)
         .order_by(Prediction.timestamp.asc())
+        .limit(limit)
         .all()
     )
 

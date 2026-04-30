@@ -4,12 +4,13 @@ Run with: pytest test_main.py -v
 """
 import pytest
 import os
+from datetime import datetime, timedelta, timezone
 
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["SECRET_KEY"]   = "test_secret_key_for_testing_only_32chars!!"
 os.environ["ENV"]          = "test"
 
-from database import Base, User
+from database import Base, SensorReading, User
 from auth     import hash_password, get_db
 from main     import app
 from sqlalchemy import create_engine
@@ -37,6 +38,7 @@ def setup_db():
     if not db.query(User).filter(User.username == "testadmin").first():
         db.add(User(username="testadmin",  hashed_password=hash_password("testpass123"), role="admin"))
         db.add(User(username="testviewer", hashed_password=hash_password("viewpass123"), role="viewer"))
+        db.add(User(username="testops",    hashed_password=hash_password("opspass123"), role="operations"))
         db.commit()
     db.close()
     yield
@@ -199,3 +201,106 @@ def test_security_headers_present():
     assert res.headers.get("x-frame-options")        == "DENY"
     assert res.headers.get("x-content-type-options") == "nosniff"
     assert res.headers.get("x-xss-protection")       == "1; mode=block"
+
+def test_health_endpoint():
+    """/health returns service status without auth"""
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert res.json() == {"status": "ok"}
+
+def test_sensor_reading_create_requires_operations_or_admin():
+    """Viewer cannot create sensor readings"""
+    token = get_token("testviewer", "viewpass123")
+    res = client.post(
+        "/api/sensor-readings",
+        json={
+            "sensor_id": "CAM-TEST",
+            "location": "Security Checkpoint",
+            "passenger_count": 10,
+            "queue_length": 3,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 403
+
+def test_sensor_reading_create_success_for_operations():
+    """Operations users can create validated sensor readings"""
+    token = get_token("testops", "opspass123")
+    res = client.post(
+        "/api/sensor-readings",
+        json={
+            "sensor_id": "CAM-OPS",
+            "location": "Security Checkpoint",
+            "passenger_count": 14,
+            "queue_length": 4,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 201
+    assert res.json()["message"] == "Sensor reading recorded"
+
+def test_live_endpoint_returns_latest_reading_per_zone():
+    """/api/live returns only the latest record for each location"""
+    db = TestSession()
+    try:
+        older = SensorReading(
+            timestamp=datetime.now(timezone.utc) - timedelta(minutes=10),
+            sensor_id="S-OLD",
+            location="Test Live Zone",
+            passenger_count=5,
+            queue_length=1,
+        )
+        newer = SensorReading(
+            timestamp=datetime.now(timezone.utc),
+            sensor_id="S-NEW",
+            location="Test Live Zone",
+            passenger_count=55,
+            queue_length=11,
+        )
+        db.add_all([older, newer])
+        db.commit()
+    finally:
+        db.close()
+
+    token = get_token()
+    res = client.get("/api/live", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 200
+    matching = [row for row in res.json() if row["location"] == "Test Live Zone"]
+    assert len(matching) == 1
+    assert matching[0]["sensor_id"] == "S-NEW"
+    assert matching[0]["passenger_count"] == 55
+
+def test_history_rejects_unbounded_hours():
+    """History endpoint enforces maximum lookback"""
+    token = get_token()
+    res = client.get(
+        "/api/history",
+        params={"zone": "Security Checkpoint", "hours": 9999},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 422
+
+def test_predictions_rejects_unbounded_limit():
+    """Predictions endpoint enforces maximum result limit"""
+    token = get_token()
+    res = client.get(
+        "/api/predictions",
+        params={"zone": "Security Checkpoint", "limit": 9999},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 422
+
+def test_register_normalizes_username():
+    """Register strips and lowercases usernames before storing"""
+    token = get_token()
+    res = client.post(
+        "/api/register",
+        json={"username": "  Mixed_Case_User  ", "password": "newpass123", "role": "viewer"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 200
+    db = TestSession()
+    try:
+        assert db.query(User).filter(User.username == "mixed_case_user").first() is not None
+    finally:
+        db.close()

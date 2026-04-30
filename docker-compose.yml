@@ -1,37 +1,44 @@
-version: '3.8'
-
 services:
 
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: airport_analytics
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   api:
-    build: ./Backend
+    build:
+      context: .
+      dockerfile: Backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:123456@postgres:5432/airport_analytics
-      SECRET_KEY: your_secret_key_here
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      ENV: ${ENV:-development}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      RUN_BACKGROUND_WORKERS: ${RUN_BACKGROUND_WORKERS:-false}
+      RUN_PREDICTIONS_ON_STARTUP: ${RUN_PREDICTIONS_ON_STARTUP:-false}
     depends_on:
       postgres:
         condition: service_healthy
     restart: always
 
   frontend:
-    build: ./Frontend/aeroflow-ui
+    build:
+      context: ./Frontend/aeroflow-ui
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     ports:
       - "80:80"
     depends_on:

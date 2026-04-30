@@ -1,40 +1,57 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
+import axios from 'axios';
 import App from './App';
 import Login from './pages/Login';
 import Alerts from './pages/Alerts';
 
 // ── Mock axios globally ───────────────────────────────────
-jest.mock('axios', () => ({
-  get:  jest.fn(() => Promise.resolve({ data: [] })),
-  post: jest.fn(() => Promise.resolve({
-    data: { access_token: 'mock_token', role: 'admin' }
-  })),
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(() => Promise.resolve({ data: [] })),
+    post: vi.fn(() => Promise.resolve({
+      data: { access_token: 'mock_token', role: 'admin' }
+    })),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+  },
 }));
 
 // ── Mock canvas (for radar animation) ────────────────────
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = () => ({
-    clearRect:         jest.fn(),
-    beginPath:         jest.fn(),
-    arc:               jest.fn(),
-    stroke:            jest.fn(),
-    fill:              jest.fn(),
-    moveTo:            jest.fn(),
-    lineTo:            jest.fn(),
-    save:              jest.fn(),
-    restore:           jest.fn(),
-    translate:         jest.fn(),
-    rotate:            jest.fn(),
-    fillText:          jest.fn(),
-    createLinearGradient: jest.fn(() => ({
-      addColorStop: jest.fn(),
+    clearRect:         vi.fn(),
+    beginPath:         vi.fn(),
+    arc:               vi.fn(),
+    stroke:            vi.fn(),
+    fill:              vi.fn(),
+    closePath:         vi.fn(),
+    moveTo:            vi.fn(),
+    lineTo:            vi.fn(),
+    save:              vi.fn(),
+    restore:           vi.fn(),
+    translate:         vi.fn(),
+    rotate:            vi.fn(),
+    fillText:          vi.fn(),
+    createLinearGradient: vi.fn(() => ({
+      addColorStop: vi.fn(),
     })),
-    createRadialGradient: jest.fn(() => ({
-      addColorStop: jest.fn(),
+    createRadialGradient: vi.fn(() => ({
+      addColorStop: vi.fn(),
     })),
-    setLineDash: jest.fn(),
+    setLineDash: vi.fn(),
   });
+});
+
+beforeEach(() => {
+  axios.get.mockImplementation(() => Promise.resolve({ data: [] }));
+  axios.post.mockImplementation(() => Promise.resolve({
+    data: { access_token: 'mock_token', role: 'admin' }
+  }));
+  localStorage.clear();
 });
 
 // ── Test 1: Login page renders ────────────────────────────
@@ -45,8 +62,7 @@ test('Login page renders key elements', () => {
     </MemoryRouter>
   );
   expect(screen.getByText(/AEROFLOW INTELLIGENCE/i)).toBeInTheDocument();
-  expect(screen.getByPlaceholderText(/enter username/i)).toBeInTheDocument();
-  expect(screen.getByPlaceholderText(/enter password/i)).toBeInTheDocument();
+  expect(screen.getAllByPlaceholderText(/_____________/i)).toHaveLength(2);
   expect(screen.getByText(/INITIATE SEQUENCE/i)).toBeInTheDocument();
 });
 
@@ -70,30 +86,27 @@ test('Login inputs accept user input', () => {
       <Login />
     </MemoryRouter>
   );
-  const usernameInput = screen.getByPlaceholderText(/enter username/i);
-  const passwordInput = screen.getByPlaceholderText(/enter password/i);
+  const [usernameInput, passwordInput] = screen.getAllByPlaceholderText(/_____________/i);
 
   fireEvent.change(usernameInput, { target: { value: 'admin' } });
-  fireEvent.change(passwordInput, { target: { value: 'admin123' } });
+  fireEvent.change(passwordInput, { target: { value: 'samplePass123' } });
 
   expect(usernameInput.value).toBe('admin');
-  expect(passwordInput.value).toBe('admin123');
+  expect(passwordInput.value).toBe('samplePass123');
 });
 
 // ── Test 4: Unauthenticated user redirected to login ──────
 test('Unauthenticated user is redirected to /login', () => {
-  localStorage.clear();
-  render(
-    <MemoryRouter initialEntries={['/live']}>
-      <App />
-    </MemoryRouter>
-  );
+  window.history.pushState({}, '', '/live');
+  render(<App />);
   expect(screen.getByText(/AEROFLOW INTELLIGENCE/i)).toBeInTheDocument();
   expect(screen.getByText(/INITIATE SEQUENCE/i)).toBeInTheDocument();
 });
 
 // ── Test 5: Alerts renders loading state ─────────────────
 test('Alerts page shows loading state initially', () => {
+  axios.get.mockImplementationOnce(() => new Promise(() => {}));
+
   render(
     <MemoryRouter>
       <Alerts />
@@ -102,9 +115,8 @@ test('Alerts page shows loading state initially', () => {
   expect(screen.getByText(/SCANNING THREATS/i)).toBeInTheDocument();
 });
 
-// ── Test 6: Login button shows authenticating when loading ─
-test('Login button shows AUTHENTICATING when clicked', async () => {
-  const axios = require('axios');
+// ── Test 6: Login button shows verifying when loading ─
+test('Login button shows VERIFYING when clicked', async () => {
   axios.post.mockImplementationOnce(
     () => new Promise(resolve => setTimeout(() => resolve({ data: { access_token: 'tok', role: 'admin' } }), 500))
   );
@@ -115,11 +127,12 @@ test('Login button shows AUTHENTICATING when clicked', async () => {
     </MemoryRouter>
   );
 
-  fireEvent.change(screen.getByPlaceholderText(/enter username/i), { target: { value: 'admin' } });
-  fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'pass' } });
+  const [usernameInput, passwordInput] = screen.getAllByPlaceholderText(/_____________/i);
+  fireEvent.change(usernameInput, { target: { value: 'admin' } });
+  fireEvent.change(passwordInput, { target: { value: 'pass' } });
   fireEvent.click(screen.getByText(/INITIATE SEQUENCE/i));
 
   await waitFor(() => {
-    expect(screen.getByText(/AUTHENTICATING/i)).toBeInTheDocument();
+    expect(screen.getByText(/VERIFYING/i)).toBeInTheDocument();
   });
 });

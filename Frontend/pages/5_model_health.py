@@ -13,7 +13,10 @@ st.markdown("## 🤖 Model Health")
 st.markdown("ML model performance metrics and status")
 st.divider()
 
-ML_DIR = r"C:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\ML_Models"
+ML_DIR = os.environ.get(
+    "AEROFLOW_ML_DIR",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "ML_Models"))
+)
 
 # ── Prophet Model ─────────────────────────────────────────
 st.markdown("### 📈 Model 1 — Prophet (Passenger Forecasting)")

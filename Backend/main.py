@@ -1,18 +1,18 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Request
+from datetime import datetime, timezone
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from contextlib import asynccontextmanager
 
 from auth import get_db, hash_password, verify_password, create_access_token, get_current_user
-from database import User
+from database import SensorReading, User
 from routes import zones, live, history, predictions, alerts
 from ws_manager import manager
 from simulator import run_simulator
@@ -35,23 +35,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"]       = "1; mode=block"
         response.headers["Referrer-Policy"]        = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"]     = "geolocation=(), microphone=()"
+        if os.environ.get("ENV") == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 # ── Lifespan ──────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        generate_predictions()
-    except Exception as e:
-        print(f"⚠️ Predictions error: {e}")
+    if os.environ.get("RUN_PREDICTIONS_ON_STARTUP", "false").lower() == "true":
+        try:
+            generate_predictions()
+        except Exception as e:
+            print(f"Predictions error: {e}")
 
-    t_alerts    = threading.Thread(target=run_alert_engine, daemon=True)
-    t_simulator = threading.Thread(target=run_simulator,    daemon=True)
-    t_alerts.start()
-    t_simulator.start()
+    if os.environ.get("RUN_BACKGROUND_WORKERS", "false").lower() == "true":
+        threading.Thread(target=run_alert_engine, daemon=True).start()
+        threading.Thread(target=run_simulator, daemon=True).start()
 
     yield
-    print("🛑 AeroFlow API shutting down")
+    print("AeroFlow API shutting down")
 
 # ── App ───────────────────────────────────────────────────
 app = FastAPI(
@@ -67,11 +69,18 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SecurityHeadersMiddleware)
+
+allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if os.environ.get("ENV") == "production" and not allowed_origins:
+    raise ValueError("CORS_ORIGINS must be set in production")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-aeroflow-frontend-url.up.railway.app",
-    "https://aeroflow-frontend.onrender.com",
-    "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
@@ -86,9 +95,19 @@ app.include_router(alerts.router)
 
 # ── Schemas ───────────────────────────────────────────────
 class RegisterRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8, max_length=128)
     role: str = "viewer"
+
+    @field_validator("username")
+    @classmethod
+    def username_must_be_valid(cls, v):
+        normalized = v.strip().lower()
+        if not normalized:
+            raise ValueError("Username is required")
+        if not normalized.replace("_", "").replace("-", "").isalnum():
+            raise ValueError("Username may contain only letters, numbers, hyphens, and underscores")
+        return normalized
 
     @field_validator("role")
     @classmethod
@@ -100,13 +119,27 @@ class RegisterRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def password_min_length(cls, v):
-        if len(v) < 8:
+        if len(v.strip()) < 8:
             raise ValueError("Password must be at least 8 characters")
         return v
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1, max_length=128)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, v):
+        normalized = v.strip().lower()
+        if not normalized:
+            raise ValueError("Username is required")
+        return normalized
+
+class SensorReadingCreate(BaseModel):
+    sensor_id: str = Field(..., min_length=1, max_length=50)
+    location: str = Field(..., min_length=1, max_length=100)
+    passenger_count: int = Field(..., ge=0)
+    queue_length: int = Field(..., ge=0)
 
 # ── Auth Routes ───────────────────────────────────────────
 @app.post("/api/register", tags=["Authentication"])
@@ -151,9 +184,36 @@ def me(current_user: User = Depends(get_current_user)):
     """Get current authenticated user info"""
     return {"username": current_user.username, "role": current_user.role}
 
+@app.post("/api/sensor-readings", tags=["Live Data"], status_code=201)
+@limiter.limit("120/minute")
+def create_sensor_reading(
+    request: Request,
+    body: SensorReadingCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a live sensor reading — admin and operations only"""
+    if current_user.role not in {"admin", "operations"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    reading = SensorReading(
+        timestamp=datetime.now(timezone.utc),
+        sensor_id=body.sensor_id.strip(),
+        location=body.location.strip(),
+        passenger_count=body.passenger_count,
+        queue_length=body.queue_length,
+    )
+    db.add(reading)
+    db.commit()
+    return {"message": "Sensor reading recorded"}
+
 @app.get("/", tags=["Root"])
 def root():
     return {"message": "✈️ AeroFlow Intelligence API is running!"}
+
+@app.get("/health", tags=["Health"])
+def health():
+    return {"status": "ok"}
 
 # ── WebSocket ─────────────────────────────────────────────
 @app.websocket("/ws/live")
