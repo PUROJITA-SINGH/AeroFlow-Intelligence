@@ -207,7 +207,7 @@ GitHub Actions (CI/CD)
               │   └── Docker container
               │       └── FastAPI + ML models
               │
-              ├── Frontend Service (aeroflow-frontend)
+              ├── Frontend Static Site (aeroflow-ui)
               │   └── Static React build
               │
               └── PostgreSQL (Render managed DB)
@@ -240,7 +240,7 @@ GitHub Actions (CI/CD)
 ### Why PostgreSQL over SQLite?
 - Production-grade concurrent access
 - Native datetime indexing for time-series queries
-- Supported by Render managed database
+- Supported by Render managed PostgreSQL
 - Horizontal scaling capability
 
 ### Why Prophet over ARIMA/LSTM?

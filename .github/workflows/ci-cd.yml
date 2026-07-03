@@ -18,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
@@ -104,3 +104,24 @@ jobs:
         run: |
           test -f .gitignore
           echo "✅ .gitignore present"
+
+  deploy-render:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [docker-build, security-check]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      RENDER_BACKEND_DEPLOY_HOOK_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}
+      RENDER_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}
+    steps:
+      - name: Trigger backend deploy hook
+        if: env.RENDER_BACKEND_DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$RENDER_BACKEND_DEPLOY_HOOK_URL"
+
+      - name: Trigger frontend deploy hook
+        if: env.RENDER_FRONTEND_DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$RENDER_FRONTEND_DEPLOY_HOOK_URL"
+
+      - name: Skip Render deploy hooks
+        if: env.RENDER_BACKEND_DEPLOY_HOOK_URL == '' && env.RENDER_FRONTEND_DEPLOY_HOOK_URL == ''
+        run: echo "No Render deploy hook secrets configured; Render Blueprint auto-deploy/manual sync can be used."

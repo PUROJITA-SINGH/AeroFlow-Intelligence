@@ -21,8 +21,8 @@
 
 | Service | URL | Status |
 |---|---|---|
-| 🖥️ Dashboard | https://aeroflow-frontend-production.up.railway.app | Live |
-| ⚙️ API | https://aeroflow-api-production.up.railway.app | Live |
+| 🖥️ Dashboard | https://aeroflow-ui.onrender.com | Placeholder |
+| ⚙️ API | https://aeroflow-api.onrender.com | Placeholder |
 | 📖 Swagger UI | Disabled in production | Use non-production `ENV` to enable |
 
 ### 🔑 Production Accounts
@@ -33,7 +33,7 @@
 | `sensor_operator` | Set with `OPERATIONS_PASSWORD` | Operations | Manage alerts and sensor ingestion |
 | `viewer` | Set with `VIEWER_PASSWORD` | Viewer | Read-only dashboard |
 
-These users are created by `Backend/seed_admin.py` in the database pointed to by `DATABASE_URL`. If `DATABASE_URL` points to Railway PostgreSQL, the credentials work from any browser against the deployed Railway frontend.
+These users are created by `Backend/seed_admin.py` in the database pointed to by `DATABASE_URL`. If `DATABASE_URL` points to Render PostgreSQL, the credentials work from any browser against the deployed Render frontend.
 
 ---
 
@@ -138,7 +138,7 @@ Sensor Reading → Alert Engine (every 5 min)
 |---|---|
 | Docker + Compose | Containerisation |
 | GitHub Actions | CI/CD pipeline |
-| Railway | Cloud deployment |
+| Render | Cloud deployment |
 
 ---
 
@@ -202,7 +202,7 @@ Open your deployed frontend URL.
 ### Environment Variables
 
 ```env
-DATABASE_URL=postgresql://postgres:<password>@<host>:<port>/railway?sslmode=require
+DATABASE_URL=postgresql://aeroflow:<password>@<host>:<port>/aeroflow
 SECRET_KEY=your_64_char_hex_secret
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=yourpassword
@@ -220,14 +220,14 @@ Generate a secure SECRET_KEY:
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### Bootstrap Railway Users
+### Bootstrap Render Users
 
-For a fresh Railway PostgreSQL database, run migrations first, then seed the initial users. Use Railway's public PostgreSQL URL from the PostgreSQL service variables or TCP proxy; do not use placeholder text, and do not use a `.railway.internal` URL from your laptop.
+For a fresh Render PostgreSQL database, run migrations first, then seed the initial users. Use Render's external PostgreSQL URL from the database dashboard if you run this from your laptop.
 
 ```powershell
 cd "c:\Users\HP\Desktop\AeroFlow\AeroFlow-Intelligence\Backend"
 
-$env:DATABASE_URL = "postgresql://postgres:<password>@<public-host>:<public-port>/railway?sslmode=require"
+$env:DATABASE_URL = "postgresql://aeroflow:<password>@<external-host>:<external-port>/aeroflow"
 $env:ADMIN_PASSWORD = "AdminStrongPassword123!"
 $env:OPERATIONS_PASSWORD = "OpsStrongPassword123!"
 $env:VIEWER_PASSWORD = "ViewerStrongPassword123!"
@@ -245,19 +245,19 @@ Verify the users:
 Test login against the deployed API:
 
 ```powershell
-$ApiUrl = "https://aeroflow-api-production.up.railway.app"
+$ApiUrl = "https://aeroflow-api.onrender.com"
 $login = Invoke-RestMethod -Method Post -Uri "$ApiUrl/api/login" -ContentType "application/json" -Body (@{ username = "admin"; password = $env:ADMIN_PASSWORD } | ConvertTo-Json)
 $token = $login.access_token
 ```
 
-`seed_admin.py` is idempotent: running it again skips existing users. During Railway deploys, `prestart.sh` only runs the seed script when `SEED_ADMIN=true`; keep `SEED_ADMIN=false` unless you intentionally want deployment-time seeding.
+`seed_admin.py` is idempotent: running it again skips existing users. During Render deploys, `prestart.sh` only runs the seed script when `SEED_ADMIN=true`; keep `SEED_ADMIN=false` unless you intentionally want deployment-time seeding.
 
 ### Sensor Ingestion User
 
 `camera_sensor.py` logs in with `AEROFLOW_SENSOR_USERNAME` and `AEROFLOW_SENSOR_PASSWORD`, then posts readings to `/api/sensor-readings`. Use the seeded operations account:
 
 ```env
-AEROFLOW_API_URL=https://aeroflow-api-production.up.railway.app
+AEROFLOW_API_URL=https://aeroflow-api.onrender.com
 AEROFLOW_SENSOR_USERNAME=sensor_operator
 AEROFLOW_SENSOR_PASSWORD=<same value as OPERATIONS_PASSWORD>
 ```
@@ -310,8 +310,8 @@ AeroFlow-Intelligence/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml
-├── railway.toml                 # Backend Railway service config
-├── Frontend/aeroflow-ui/railway.toml
+├── render.yaml                  # Render Blueprint
+├── MIGRATION.md                 # Render deployment guide
 ├── docker-compose.yml
 ├── .env.example
 └── .dockerignore

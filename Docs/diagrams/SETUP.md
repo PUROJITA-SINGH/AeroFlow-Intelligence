@@ -200,5 +200,5 @@ npx kill-port 3000
 ### Frontend can't reach backend
 Check `Frontend/aeroflow-ui/.env.production`:
 ```env
-VITE_API_URL=https://your-backend-url.onrender.com
+VITE_API_URL=https://aeroflow-api.onrender.com
 ```
